@@ -10,7 +10,11 @@ reg_path = base / "registry.csv"
 def katerly():
     
     """This is Katerly project management CLI"""
-    pass
+    if not base.exists():
+        click.echo("Oops base directory not found!")
+        
+    if not reg_path.exists():
+        click.echo("Oops base registry not found!")
 
 @katerly.command()
 def welcome():
@@ -23,17 +27,24 @@ def init(name):
     project_path = base / name
     project_path.mkdir(parents=True,exist_ok=True)
     
-    
-    from datetime import datetime,timezone
-    createdAt = datetime.now(timezone.utc).isoformat()
-    
-    row = f"{name},{project_path.resolve()},{createdAt}\n"
-    
-    with reg_path.open("a",encoding="utf-8") as registry:
-        registry.write(row)
+    with reg_path.open("r",encoding="utf-8") as registry:
+        for line in registry:
+            if line.split(",")[0]==name:
+                click.echo("Folder/File with same name already exists!")
+                return
+                
+        else:
+            
+            from datetime import datetime,timezone
+            createdAt = datetime.now(timezone.utc).isoformat()
+            
+            row = f"{name},{project_path.resolve()},{createdAt}\n"
+            
+            with reg_path.open("a",encoding="utf-8") as registry:
+                registry.write(row)
         
-    click.echo(f"Directory{name} created and logged!")
-    click.echo(f"Path: {project_path.resolve()}")
+            click.echo(f"Directory{name} created and logged!")
+            click.echo(f"Path: {project_path.resolve()}")
     
     
 @katerly.command()
