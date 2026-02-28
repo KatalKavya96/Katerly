@@ -3,6 +3,8 @@ from pathlib import Path
 
 
 base = Path.home() /"Desktop"/"Katerly_Projects"
+reg_path = base / "registry.csv"
+
 
 @click.group()
 def katerly():
@@ -18,28 +20,81 @@ def welcome():
 @katerly.command()
 @click.argument("name")
 def init(name):
-    project = base / name
-    project.mkdir(parents=True,exist_ok=True)
+    project_path = base / name
+    project_path.mkdir(parents=True,exist_ok=True)
+    
+    
+    from datetime import datetime,timezone
+    createdAt = datetime.now(timezone.utc).isoformat()
+    
+    row = f"{name},{project_path.resolve()},{createdAt}\n"
+    
+    with reg_path.open("a",encoding="utf-8") as registry:
+        registry.write(row)
+        
+    click.echo(f"Directory{name} created and logged!")
+    click.echo(f"Path: {project_path.resolve()}")
+    
     
 @katerly.command()
 def list():
     
-    click.ls()
+    if not reg_path.exists():
+        click.echo("No file has yet been created")
+        
+    else:
+        
+        with reg_path.open("r",encoding="utf-8") as registry:
+            
+            
+            for line in registry:
+                
+                click.echo(f"Name : {line.split(',')[0]}\nPath : {line.split(',')[1]}\nCreatedOn : {line.split(',')[2]}")
+    
     
 
 @katerly.command()
 @click.argument("name")
 def info(name):
     
-    click.echo(click.ls(name))
+    project_path = base / name
+    
+    if not project_path.exists():
+        click.echo("No such Folder/File was found!")
+        
+    else:
+        
+        with reg_path.open("r",encoding="utf-8") as registry:
+            
+            for line in registry:
+                
+                if line.split(',')[0] == name:
+                    click.echo(f"Name : {line.split(',')[0]}\nPath : {line.split(',')[1]}\nCreatedOn : {line.split(',')[2]}OnDisk : {project_path.exists()}\n")
     
     
 @katerly.command()
 @click.argument("name")
 def remove(name):
     
-    click.rm(name)
+    project_path = base / name
+    
+    if not project_path.exists():
+        
+        click.echo("No such Folder/File exists!")
+        
+    else:
+        
+        # Handling Folder deletion
+        shutil.rmtree(project_path)
+        
+        # Handling deletion in Registry location
+        # with reg_path.open("a",encoding="utf-8") as registry:
+            
+            
+        
+    
 
 if __name__ == "__main__":
     
     katerly()
+    
